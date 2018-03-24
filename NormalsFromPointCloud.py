@@ -6,7 +6,7 @@ import networkx as nx
 import csv
 
 # Iteration Limiter ( current dataframe has 4357 rows )
-limiter = 200
+limiter = 20000
 
 # Loading the csv into a data frame and creating attribute columns for normal
 PointCloud = pd.read_csv('Input/SmallPointCloud.csv', names=['X', 'Y', 'Z'], dtype='float')
@@ -16,7 +16,7 @@ PointCloud['NZ'] = pd.Series(0, index=PointCloud.index, dtype='float')
 PointCloud['C'] = pd.Series(0, index=PointCloud.index, dtype='float')
 
 # Finding K nearest neighbours : KNN
-NbrsNum = 5
+NbrsNum = 10
 nbrs = NearestNeighbors(n_neighbors=NbrsNum, algorithm='ball_tree').fit(PointCloud)
 NbrsDistances, NbrsIndices = nbrs.kneighbors(PointCloud)
 
@@ -64,6 +64,7 @@ for i in range(len(NbrsIndices)):
     MinEigenValue,IDofMinEigeValue = min((eigenValues[i],i) for i in range(len(eigenValues)))
     normal = eigenVectors[IDofMinEigeValue]
 
+
     # saving to PointCloud
     PointCloud['NX'][i] = normal[0]
     PointCloud['NY'][i] = normal[1]
@@ -71,6 +72,19 @@ for i in range(len(NbrsIndices)):
 
     #PointCloud['C'][i] = MinEigenValue/eigenValues.sum()
     PointCloud['C'][i] =  MinEigenValue/sum(eigenValues)
+
+for index, row in PointCloud.iterrows():
+    high_point_ref = [0,0,200]
+
+    #current point normal
+    iNormal = [PointCloud['NX'][index],PointCloud['NY'][index],PointCloud['NZ'][index]]
+
+    if np.dot(iNormal,high_point_ref) < 0:  # high_point_ref is just a very high point to make sure normals all flip
+
+        PointCloud['NX'][index] *= -1
+        PointCloud['NY'][index] *= -1
+        PointCloud['NZ'][index] *= -1
+
 
 
 
