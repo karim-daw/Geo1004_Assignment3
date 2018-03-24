@@ -2,12 +2,18 @@ import pandas as pd
 from sklearn.neighbors import NearestNeighbors
 import numpy as np
 from sklearn.decomposition import PCA
+import networkx as nx
+import csv
+
+# Iteration Limiter ( current dataframe has 4357 rows )
+limiter = 200
 
 # Loading the csv into a data frame and creating attribute columns for normal
 PointCloud = pd.read_csv('Input/SmallPointCloud.csv', names=['X', 'Y', 'Z'], dtype='float')
 PointCloud['NX'] = pd.Series(0, index=PointCloud.index, dtype='float')
 PointCloud['NY'] = pd.Series(0, index=PointCloud.index, dtype='float')
 PointCloud['NZ'] = pd.Series(0, index=PointCloud.index, dtype='float')
+PointCloud['C'] = pd.Series(0, index=PointCloud.index, dtype='float')
 
 # Finding K nearest neighbours : KNN
 NbrsNum = 5
@@ -63,6 +69,54 @@ for i in range(len(NbrsIndices)):
     PointCloud['NY'][i] = normal[1]
     PointCloud['NZ'][i] = normal[2]
 
+    #PointCloud['C'][i] = MinEigenValue/eigenValues.sum()
+    PointCloud['C'][i] =  MinEigenValue/sum(eigenValues)
+
+
+
+########################################################################################################################
+
+# Initializing the whole Graph or "Mother Graph"
+
+MotherGraph = nx.Graph()
+
+counter = 0
+for index, row in PointCloud.iterrows():
+
+    # Limiting the iteration so it doest take too long, set it to a high number if you want to run everything
+    if counter > limiter : break
+    counter += 1
+
+    # Adding Nodes
+    MotherGraph.add_node(index, C = PointCloud['C'][index]) # C is curvature
+
+    # Here we iterate through the neighbourlist
+    for j in range(NbrsIndices[index].size):
+        # Adding Edges
+        nested_index = NbrsIndices[index][j]
+        # Calculating Curvature Product
+        CP = PointCloud['C'][index] + PointCloud['C'][nested_index]
+        NDP = abs(np.dot([PointCloud['NX'][index],PointCloud['NY'][index],PointCloud['NZ'][index]],
+                         [PointCloud['NX'][nested_index],PointCloud['NY'][nested_index],PointCloud['NZ'][nested_index]]))
+        MotherGraph.add_edge(index, nested_index, CP = CP, NDP = NDP)
+
+EdgeList = list(MotherGraph.edges.data('CP'))
+
+# Reporting
+print "Graph : Calculated"
+
 # Nodes : Write to CSV
+PointCloud.to_csv('Output/Nodes.csv')
+
+# Edges : Write to CSV
+with open('Output/Edges.csv', 'wt') as csvfile:  ## writing the whole deference phase
+    writer = csv.writer(csvfile, delimiter=',',
+                        quotechar='|', quoting=csv.QUOTE_MINIMAL)
+    for p in range(len(EdgeList)):
+        writer.writerow(EdgeList[p])
+
+#print EdgeList
+
+# NodesWithNormals : Write to CSV
 PointCloud.to_csv('PointCloudWNormals.csv')
 print("PointCloudWNormals.csv was saved.")
