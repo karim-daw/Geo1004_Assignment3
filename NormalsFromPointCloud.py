@@ -120,4 +120,3 @@ with open('Output/Edges.csv', 'wt') as csvfile:  ## writing the whole deference 
 # NodesWithNormals : Write to CSV
 PointCloud.to_csv('PointCloudWNormals.csv')
 print("PointCloudWNormals.csv was saved.")
-######
