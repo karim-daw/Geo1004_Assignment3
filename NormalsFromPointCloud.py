@@ -84,6 +84,7 @@ for index, row in PointCloud.iterrows():
         PointCloud['NX'][index] *= -1
         PointCloud['NY'][index] *= -1
         PointCloud['NZ'][index] *= -1
+        #####
 
 
 
