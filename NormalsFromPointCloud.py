@@ -4,6 +4,8 @@ import numpy as np
 from sklearn.decomposition import PCA
 import networkx as nx
 import csv
+from sklearn.cluster import KMeans
+
 
 # Iteration Limiter ( current dataframe has 4357 rows )
 limiter = 20000
@@ -119,6 +121,26 @@ EdgeList = list(MotherGraph.edges.data('CP'))
 
 # Reporting
 print "Graph : Calculated"
+
+########################################################################################################################
+
+# Creating K clusters
+
+# Putting Normals in a seperate dataframe
+TopNormals = PointCloud[['NX', 'NY', 'NZ']].copy()
+
+#Clustering with KMeans
+KCluster = KMeans(n_clusters=4, random_state=0)
+KClustLable = KCluster.fit_predict(TopNormals)
+
+#puting the lables in the DataFrame
+PointCloud['KCL'] = pd.Series(KClustLable, index=PointCloud.index, dtype='int')
+
+# Reporting
+print "Clusters : Calculated"
+
+########################################################################################################################
+
 
 # Nodes : Write to CSV
 PointCloud.to_csv('Output/Nodes.csv')
