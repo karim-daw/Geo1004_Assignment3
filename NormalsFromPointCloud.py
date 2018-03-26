@@ -130,16 +130,59 @@ print "Graph : Calculated"
 TopNormals = PointCloud[['NX', 'NY', 'NZ']].copy()
 
 #Clustering with KMeans
-KCluster = KMeans(n_clusters=4, random_state=0)
+NumClusters=4
+KCluster = KMeans(n_clusters=NumClusters, random_state=0)
 KClustLable = KCluster.fit_predict(TopNormals)
 
 #puting the lables in the DataFrame
 PointCloud['KCL'] = pd.Series(KClustLable, index=PointCloud.index, dtype='int')
 
-# Reporting
-print "Clusters : Calculated"
 
 ########################################################################################################################
+# finding connected components for clusters
+
+KCLCCList = [0 for x in range(PointCloud['KCL'].size)]
+KCLCCcounter = 0
+
+# iterating through clusters and creating subgraph based on the cluters
+for i in range(NumClusters):
+
+    #extracting the index of nodes within a certain KCL
+    CurrentClusterNodes = PointCloud.index[PointCloud['KCL'] == i].tolist()
+
+    #creating a subgraph based on the exact cluster
+    DaughterGraph = MotherGraph.subgraph(CurrentClusterNodes)
+
+    #checking for the connected components
+    CurClustConnComp = list(sorted(nx.connected_components(DaughterGraph), key=len, reverse=True))
+
+    print CurClustConnComp
+
+    for j in range(len(CurClustConnComp)):
+        # becase it is a set
+        for k in CurClustConnComp[j]:
+            KCLCCList[k] = KCLCCcounter
+
+        KCLCCcounter += 1
+
+PointCloud['KCLCC'] = pd.Series(KCLCCList, index=PointCloud.index, dtype='int')
+########################################################################################################################
+# Using PCA on entire Clusters
+
+
+
+print PointCloud.head(n = 11)
+
+
+
+
+#
+# cluster = np.array(XYZ_neighborhood)
+# # print (X)
+# # n_components means "3D"
+# pca = PCA(n_components=3)
+# pca.fit(X)
+
 
 
 # Nodes : Write to CSV
